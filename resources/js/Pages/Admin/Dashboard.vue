@@ -1,0 +1,370 @@
+<template>
+  <div class="min-h-screen bg-amber-50">
+    <Navbar />
+
+    <div class="p-6 pt-32">
+
+      <!-- Stats Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div class="bg-white rounded-xl shadow p-4 flex items-center">
+          <div class="bg-yellow-100 p-3 rounded-full mr-4">
+            <!-- icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500 font-semibold uppercase">Pendapatan Bulan Ini</p>
+            <p class="text-xl font-bold text-gray-800">{{ stats.incomeThisMonth }}</p>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow p-4 flex items-center">
+          <div class="bg-pink-100 p-3 rounded-full mr-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+            </svg>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500 font-semibold uppercase">Item Terjual</p>
+            <p class="text-xl font-bold text-gray-800">{{ stats.shipmentThisMonth }}</p>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow p-4 flex items-center">
+          <div class="bg-blue-100 p-3 rounded-full mr-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500 font-semibold uppercase">Perlu Dikirim</p>
+            <p class="text-xl font-bold text-gray-800">{{ stats.shipmentPending }} Pesanan</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions Card -->
+      <div class="bg-white rounded-xl shadow p-6 mb-6">
+        <h2 class="text-lg font-bold text-gray-800 mb-4">Quick Actions</h2>
+        <div class="flex flex-wrap gap-3">
+          <!-- Tombol Aktifkan Semua Produk -->
+          <button
+            @click="activateAll"
+            :disabled="loading"
+            class="flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white font-semibold rounded-lg shadow hover:bg-green-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+            </svg>
+            <span v-if="!loading">Aktifkan Semua Produk</span>
+            <span v-else>Memproses...</span>
+          </button>
+
+          <!-- Tombol Nonaktifkan Semua Produk -->
+          <button
+            @click="deactivateAll"
+            :disabled="loading"
+            class="flex items-center gap-2 px-5 py-2.5 bg-red-600 text-white font-semibold rounded-lg shadow hover:bg-red-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+            </svg>
+            <span v-if="!loading">Nonaktifkan Semua Produk</span>
+            <span v-else>Memproses...</span>
+          </button>
+        </div>
+        <p class="text-sm text-gray-500 mt-3">
+          <span class="font-medium">Tip:</span> Tombol "Aktifkan" hanya akan mengaktifkan produk dengan stok > 0
+        </p>
+      </div>
+
+      <!-- Catalog Management Card -->
+      <div class="bg-white rounded-xl shadow p-6 mb-6">
+        <h2 class="text-lg font-bold text-gray-800 mb-4">Manajemen Katalog PDF</h2>
+        
+        <!-- Current Catalog Info -->
+        <div v-if="catalogInfo.exists" class="bg-gray-50 rounded-lg p-4 mb-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-semibold text-gray-700">File Saat Ini:</p>
+              <p class="text-lg font-bold text-gray-900">{{ catalogInfo.name }}</p>
+              <p class="text-xs text-gray-500 mt-1">
+                Ukuran: {{ catalogInfo.size_formatted }} • Diupload: {{ catalogInfo.updated_at }}
+              </p>
+            </div>
+            <div class="text-green-600">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div v-else class="bg-yellow-50 rounded-lg p-4 mb-4 border border-yellow-200">
+          <p class="text-sm text-yellow-800">Belum ada katalog PDF yang diupload</p>
+        </div>
+
+        <!-- Upload Form -->
+        <form @submit.prevent="uploadCatalog" class="space-y-3">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Upload Katalog Baru (Max 50MB)</label>
+            <input 
+              type="file" 
+              ref="catalogFile"
+              accept=".pdf"
+              @change="handleFileSelect"
+              class="block w-full text-sm text-gray-500 
+                file:mr-4 file:py-2 file:px-4
+                file:rounded-lg file:border-0
+                file:text-sm file:font-semibold
+                file:bg-pink-50 file:text-pink-700
+                hover:file:bg-pink-100
+                cursor-pointer"
+            />
+            <p v-if="selectedFileName" class="text-sm text-gray-600 mt-1"> {{ selectedFileName }}</p>
+          </div>
+          
+          <button 
+            type="submit"
+            :disabled="!selectedFileName || uploadingCatalog"
+            class="flex items-center gap-2 px-4 py-2 bg-pink-600 text-white font-semibold rounded-lg shadow hover:bg-pink-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+            </svg>
+            <span v-if="!uploadingCatalog">Upload Katalog</span>
+            <span v-else>Mengupload...</span>
+          </button>
+        </form>
+
+        <p class="text-xs text-gray-500 mt-3">
+          <span class="font-medium">Info:</span> File lama akan otomatis terhapus saat upload katalog baru
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+
+        <div class="bg-white rounded-xl shadow p-6">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-bold text-gray-800">Pesanan Masuk ({{ pendingOrders.length }})</h2>
+            <a href="/admin/orders" class="text-sm text-pink-600 hover:underline">Lihat Semua</a>
+          </div>
+          
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead>
+                <tr>
+                  <th class="px-4 py-2 text-left text-xs font-bold text-gray-500 uppercase">Invoice</th>
+                  <th class="px-4 py-2 text-left text-xs font-bold text-gray-500 uppercase">Pelanggan</th>
+                  <th class="px-4 py-2 text-left text-xs font-bold text-gray-500 uppercase">Total</th>
+                  <th class="px-4 py-2 text-left text-xs font-bold text-gray-500 uppercase">Status</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <tr v-for="order in pendingOrders" :key="order.id" class="hover:bg-gray-50 transition">
+                  <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ order.id }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-600">{{ order.customer }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-600 font-bold">{{ order.amount }}</td>
+                  <td class="px-4 py-3 text-sm">
+                    <span class="px-2 py-1 text-xs font-bold rounded-full bg-yellow-100 text-yellow-700">
+                      {{ order.status }}
+                    </span>
+                  </td>
+                </tr>
+                
+                <tr v-if="pendingOrders.length === 0">
+                    <td colspan="4" class="px-4 py-8 text-center text-gray-400 italic">
+                        Belum ada pesanan baru yang masuk.
+                    </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow p-6">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-bold text-gray-800">Ulasan Terbaru</h2>
+            <a href="/admin/testimonials" class="text-sm text-pink-600 hover:underline">Lihat Semua</a>
+          </div>
+          
+          <div class="space-y-4">
+            <div v-for="(review, index) in reviews" :key="index" class="flex gap-3 border-b pb-3 last:border-0">
+              <img :src="review.image || 'https://via.placeholder.com/60'" class="w-10 h-10 object-cover rounded-full shadow-sm" alt="Produk" />
+              <div class="flex-1">
+                <div class="flex justify-between">
+                    <h4 class="text-sm font-bold text-gray-800">{{ review.product_name }}</h4>
+                    <span class="text-xs text-gray-400">{{ review.user_name }}</span>
+                </div>
+                <div class="flex items-center my-1">
+                  <span v-for="n in 5" :key="n" :class="n <= review.rating ? 'text-yellow-400' : 'text-gray-300'">★</span>
+                </div>
+                <p class="text-sm text-gray-600 line-clamp-2">"{{ review.comment }}"</p>
+              </div>
+            </div>
+
+            <div v-if="reviews.length === 0" class="text-center py-8 text-gray-400 italic">
+                Belum ada ulasan dari pelanggan.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-6">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">Produk Terlaris Bulan Ini</h2>
+        
+        <div class="flex space-x-4 overflow-x-auto pb-4">
+          <div v-for="item in bestSellers" :key="item.id" class="bg-white rounded-xl shadow-sm hover:shadow-md transition p-4 min-w-[220px] max-w-[220px] flex-shrink-0 border border-gray-100">
+            <div class="relative">
+              <img :src="item.image" :alt="item.name" class="w-full h-32 object-cover rounded-lg mb-3" />
+              <div class="absolute top-2 right-2 bg-white/90 backdrop-blur px-2 py-1 rounded text-xs font-bold text-pink-600 shadow-sm">
+                  {{ item.total_sold }} Terjual
+              </div>
+            </div>
+            
+            <h3 class="font-bold text-gray-800 truncate" :title="item.name">{{ item.name }}</h3>
+            <p class="text-pink-600 font-bold mt-1">{{ item.price }}</p>
+            
+            <div class="mt-3 flex justify-between items-center">
+              <span 
+                v-if="item.available"
+                class="px-2 py-1 text-xs font-bold rounded bg-green-100 text-green-700"
+              >
+                Stok Ada
+              </span>
+              <span 
+                v-else
+                class="px-2 py-1 text-xs font-bold rounded bg-gray-200 text-gray-600"
+              >
+                {{ item.stock <= 0 ? 'Stok Habis' : 'Tidak Tersedia' }}
+              </span>
+            </div>
+          </div>
+
+          <div v-if="bestSellers.length === 0" class="w-full text-center py-10 bg-white rounded-xl border border-dashed border-gray-300 text-gray-400">
+             Belum ada data penjualan yang cukup untuk menentukan Best Seller.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</template>
+
+<script setup>
+import Navbar from "@/Components/NavbarAdmin.vue";
+import { defineProps, ref } from 'vue';
+import { Inertia } from '@inertiajs/inertia';
+import { usePage } from '@inertiajs/inertia-vue3';
+
+// akses props inertia global (mis. csrf token)
+const page = usePage();
+
+// MENERIMA DATA DARI CONTROLLER
+const props = defineProps({
+    stats: Object,          // Income, Shipment, Pending Count
+    pendingOrders: Array,   // Daftar 5 order pending terbaru
+    reviews: Array,         // Daftar 5 ulasan terbaru
+    bestSellers: Array,     // Daftar 5 produk terlaris
+    catalogInfo: Object     // Info katalog saat ini
+});
+
+// extract values to local refs so template binding is simple
+const stats = props.stats ?? {};
+const pendingOrders = props.pendingOrders ?? [];
+const reviews = props.reviews ?? [];
+const bestSellers = props.bestSellers ?? [];
+const catalogInfo = props.catalogInfo ?? { exists: false };
+
+const loading = ref(false);
+const uploadingCatalog = ref(false);
+const selectedFileName = ref('');
+const catalogFile = ref(null);
+
+// Handle file selection
+function handleFileSelect(event) {
+  const file = event.target.files[0];
+  if (file) {
+    selectedFileName.value = file.name;
+  } else {
+    selectedFileName.value = '';
+  }
+}
+
+// Upload catalog
+function uploadCatalog() {
+  if (!catalogFile.value || !catalogFile.value.files[0]) {
+    alert('Pilih file PDF terlebih dahulu');
+    return;
+  }
+
+  const file = catalogFile.value.files[0];
+  
+  // Validate file size (50MB)
+  const maxSize = 50 * 1024 * 1024; // 50MB in bytes
+  if (file.size > maxSize) {
+    alert('File terlalu besar! Maksimal 50MB');
+    return;
+  }
+
+  if (!confirm('Yakin upload katalog baru? File lama akan terhapus.')) return;
+
+  uploadingCatalog.value = true;
+
+  const formData = new FormData();
+  formData.append('catalog', file);
+
+  Inertia.post('/admin/catalog/upload', formData, {
+    preserveScroll: true,
+    onSuccess: () => {
+      uploadingCatalog.value = false;
+      selectedFileName.value = '';
+      catalogFile.value.value = ''; // Reset file input
+      Inertia.reload();
+      alert('Katalog berhasil diupload!');
+    },
+    onError: (errors) => {
+      uploadingCatalog.value = false;
+      console.error(errors);
+      alert('Gagal upload katalog. Pastikan file adalah PDF dan ukuran < 50MB');
+    }
+  });
+}
+
+function activateAll() {
+  if (!confirm('Yakin mengaktifkan semua produk (kecuali stok 0)?')) return;
+  loading.value = true;
+
+  Inertia.post('/admin/products/activate-all', {}, {
+    onSuccess: () => {
+      loading.value = false;
+      // reload page to reflect changes (or you can update local data)
+      Inertia.reload();
+      alert('Produk berhasil diaktifkan (stok > 0).');
+    },
+    onError: (errors) => {
+      loading.value = false;
+      console.error(errors);
+      alert('Gagal mengaktifkan produk. Cek console untuk detail.');
+    }
+  });
+}
+
+function deactivateAll() {
+  if (!confirm('Yakin menonaktifkan semua produk?')) return;
+  loading.value = true;
+
+  Inertia.post('/admin/products/deactivate-all', {}, {
+    onSuccess: () => {
+      loading.value = false;
+      Inertia.reload();
+      alert('Produk berhasil dinonaktifkan.');
+    },
+    onError: (errors) => {
+      loading.value = false;
+      console.error(errors);
+      alert('Gagal menonaktifkan produk. Cek console untuk detail.');
+    }
+  });
+}
+</script>
